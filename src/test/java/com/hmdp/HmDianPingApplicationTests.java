@@ -25,7 +25,7 @@ class HmDianPingApplicationTests {
         cacheClient.setWithLogicExpire(CACHE_SHOP_KEY+1L,shop,10L, TimeUnit.SECONDS);
     }
     @Test
-    void testSaveShop1() {
+    void testSaveShop1() throws InterruptedException {
         iShopService.saveShop2Redis(1L,10L);
     }
 
