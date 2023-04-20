@@ -24,4 +24,9 @@ class HmDianPingApplicationTests {
         Shop shop = iShopService.getById(1L);
         cacheClient.setWithLogicExpire(CACHE_SHOP_KEY+1L,shop,10L, TimeUnit.SECONDS);
     }
+    @Test
+    void testSaveShop1() {
+        iShopService.saveShop2Redis(1L,10L);
+    }
+
 }

@@ -62,9 +62,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         if (StrUtil.isBlank(shopJson)) {
             return null;
         }
-        if(shopJson != null){
-            return null;
-        }
         //命中，需要反序列化json为对象
         RedisData redisData = JSONUtil.toBean(shopJson, RedisData.class);
         Shop shop = JSONUtil.toBean((JSONObject) redisData.getData(), Shop.class);
@@ -80,11 +77,9 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //判断是否获取锁成功
         if(isLock) {
             //获取成功，开启一个线程执行重建
-            shopJson= stringRedisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
-            //判断是否存在
-            if (StrUtil.isNotBlank(shopJson)) {
-                //存在直接返回
-                return BeanUtil.toBean(shopJson, Shop.class);
+            if(expireTime.isAfter(LocalDateTime.now())){
+                //未过期，直接返回店铺信息
+                return shop;
             }
             CACHE_REBUILD_EXECUTOR.submit(() -> {
                 try {
@@ -106,7 +101,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //判断是否存在
         if (StrUtil.isNotBlank(shopJson)) {
             //存在直接返回
-            return BeanUtil.toBean(shopJson, Shop.class);
+            return JSONUtil.toBean(shopJson, Shop.class);
 
         }
         if(shopJson != null){
@@ -130,7 +125,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         //判断是否存在
         if (StrUtil.isNotBlank(shopJson)) {
             //存在直接返回
-          return BeanUtil.toBean(shopJson, Shop.class);
+          return JSONUtil.toBean(shopJson, Shop.class);
         }
         if(shopJson != null){
             return null;
@@ -151,7 +146,7 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
             //判断是否存在
             if (StrUtil.isNotBlank(shopJson)) {
                 //存在直接返回
-                return BeanUtil.toBean(shopJson, Shop.class);
+                return JSONUtil.toBean(shopJson, Shop.class);
             }
             shop = getById(id);
             //不存在，返回错误
@@ -170,9 +165,10 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
         }
         return shop;
     }
-    public void saveShop2Redis(Long id,Long expireSeconds){
+    public void saveShop2Redis(Long id,Long expireSeconds) throws InterruptedException {
         //查询店铺信息
         Shop shop = getById(id);
+        Thread.sleep(200);
         //封装逻辑过期实践
         RedisData redisData = new RedisData();
         redisData.setData(shop);

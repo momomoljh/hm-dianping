@@ -42,7 +42,7 @@ public class CacheClient {
         String json= stringRedisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
 
         if (StrUtil.isNotBlank(json)){
-            return  BeanUtil.toBean(json, type);
+            return JSONUtil.toBean(json, type);
         }
         if(json != null){
             return null;
@@ -67,9 +67,6 @@ public class CacheClient {
         if (StrUtil.isBlank(json)) {
             return null;
         }
-        if(json != null){
-            return null;
-        }
         //命中，需要反序列化json为对象
         RedisData redisData = JSONUtil.toBean(json, RedisData.class);
         R r = JSONUtil.toBean((JSONObject) redisData.getData(), type);
@@ -85,11 +82,9 @@ public class CacheClient {
         //判断是否获取锁成功
         if(isLock) {
             //获取成功，开启一个线程执行重建
-            json= stringRedisTemplate.opsForValue().get(CACHE_SHOP_KEY + id);
-            //判断是否存在
-            if (StrUtil.isNotBlank(json)) {
-                //存在直接返回
-               return BeanUtil.toBean(json, type);
+            if(expireTime.isAfter(LocalDateTime.now())){
+                //未过期，直接返回店铺信息
+                return r;
             }
             CACHE_REBUILD_EXECUTOR.submit(() -> {
                 try {
